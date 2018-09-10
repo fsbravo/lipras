@@ -3,14 +3,12 @@ Base classes for Assigner.
 """
 
 from common import *
-from Window import *
 
 from matplotlib import pyplot as plt
 import tqdm
 
 import scipy.stats as sps
 import numpy as np
-from scipy.optimize import linear_sum_assignment
 from cvxpy import *
 
 import networkx as nx
@@ -768,79 +766,7 @@ class Assigner(nx.DiGraph):
         edges = [edge_order[i] for i in e_index]
         self.build_solution_graph(edges)
         print '... done!'
-
-    # def optimize(self, max_utilization=1, max_variable=1, G=None):
-
-    #     """
-    #     Solve LP to generate solution subgraph.
-    #     """
-
-    #     if G is None:
-    #         G = self
-
-    #     # ### fix edge order
-    #     print '...fixing edge order'
-    #     self.edge_order = sorted(G.edges())
-    #     self.e_translator = {n: i for i, n in enumerate(self.edge_order)}
-    #     self.e_translator_r = {i: n for i, n in enumerate(self.edge_order)}
-
-    #     # ### variable
-    #     print '...creating variable'
-    #     n_edges = len(G.edges())
-    #     self.variable = Variable((1, n_edges))
-
-    #     print self.variable.shape
-
-    #     # ### constraints
-    #     print '...assembling constraints'
-    #     constraints = []
-    #     # path constraints
-    #     for node in G.nodes():
-    #         pred = G.pred[node]
-    #         pred_edges = [self.e_translator[(p, node)] for p in pred]
-    #         succ = G.succ[node]
-    #         succ_edges = [self.e_translator[(node, s)] for s in succ]
-    #         # variable to constrain
-    #         succ_sum = sum(self.variable[0, succ_edges]) if len(succ_edges) > 0 else 0
-    #         pred_sum = sum(self.variable[0, pred_edges]) if len(pred_edges) > 0 else 0
-    #         if node.id == self.start.id:
-    #             c = succ_sum - pred_sum == 1
-    #         elif node.id == self.end.id:
-    #             c = succ_sum - pred_sum == -1
-    #         else:
-    #             c = succ_sum - pred_sum == 0
-    #         constraints.append(c)
-    #     # utilization constraints
-    #     u_vecs = [edge[1].u.reshape((1, -1)) for edge in self.edge_order]
-    #     print u_vecs[0].shape
-    #     u = np.concatenate(u_vecs, axis=0)
-    #     print u.shape
-    #     self.utilization = self.variable * u
-    #     constraints.append(self.utilization <= max_utilization)
-    #     # positivity and stochasticity constraints
-    #     constraints.append(self.variable >= 0)
-    #     constraints.append(self.variable <= max_variable)
-
-    #     # ### cost
-    #     print '...assembling cost'
-    #     scores = np.array([self[t[0]][t[1]]['score'] for t in self.edge_order])
-    #     scores.reshape((-1, 1))
-    #     cost = sum(self.variable * scores)
-
-    #     # ### problem
-    #     self.problem = Problem(Maximize(cost), constraints)
-
-    #     # ### solve
-    #     print '... solving ...'
-    #     self.problem.solve(solver=GUROBI)
-    #     print '... done!'
-
-    #     # ### build solution graph
-    #     print '... building solution graph ...'
-    #     e_index = np.nonzero(self.variable.value > 0.05)[1]
-    #     edges = [self.edge_order[i] for i in e_index]
-    #     self.build_solution_graph()
-    #     print '... done!'
+ 
 
     def build_solution_graph(self, edges):
 
