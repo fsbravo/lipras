@@ -15,6 +15,44 @@ import pandas as pd
 from common import *
 
 
+class Protein(object):
+
+    """
+    Protein object for NMR assignment. Can be used for both known proteins (for
+    algorithm testing) and for unknown proteins.
+
+    Defines following fields:
+        sequence : 3-letter amino acid sequence
+        size     : number of amino acids
+        residues : pandas dataframe with known frequencies (if any)
+        locs     : pandas dataframe with mean of atom chemical shifts
+        scales   : pandas dataframe with standard deviation of atom chemical shifts
+
+    Data for locs and scales is obtained from BMRB data and stored in chemical_shifts.dt
+
+    Protein can be setup from either an NMRStar v3.1 file or it can be simulated
+    from a prior distribution by providing a sequence. If both are provided, the
+    function defers to the NMRStar file.
+    """
+
+    def __init__(self, nmrstar=None, sequence=None):
+
+        if nmrstar is not None:
+            self.__setup_from_nmrstar(nmrstar)
+        elif sequence is not None:
+            self.__setup_from_sequence(sequence)
+        else:
+            raise ValueError('An NMRStar file or a sequence must be provided!')
+
+    def __setup_from_nmrstar(self, nmrstar):
+
+        pass
+
+    def __setup_from_sequence(self, sequence):
+
+        pass
+
+
 class TrueProtein(object):
 
     """
