@@ -60,18 +60,32 @@ class NmrStarSaveBlock(object):
 
     def __str__(self):
 
-        return 'SaveBlock({}):\n\tproperties: {}\n\tloops: {}'.format(
-            self.name, self.properties.keys(), self.loops.keys())
+        properties = ', '.join(
+            ['{}={}'.format(k, v) for k, v in self.properties.iteritems()])
+
+        loops = ', '.join(
+            ['{}=DataFrame{}'.format(k, v.shape) for k, v in self.loops.iteritems()])
+
+        return 'SaveBlock({}):\n\tproperties: \n\t\t{}\n\tloops: \n\t\t{}'.format(
+            self.name, properties, loops)
 
     def __repr__(self):
 
-        return 'SaveBlock({}):\n\tproperties: {}\n\tloops: {}'.format(
-            self.name, self.properties.keys(), self.loops.keys())
+        properties = '\n\t\t'.join(
+            ['{:35} {}'.format(k, v) for k, v in self.properties.iteritems()])
+
+        loops = '\n\t\t'.join(
+            ['{:35} DataFrame{}'.format(k, v.shape) for k, v in self.loops.iteritems()])
+
+        return 'SaveBlock({}):\n\tproperties: \n\t\t{}\n\tloops: \n\t\t{}'.format(
+            self.name, properties, loops)
 
     def short_string(self):
 
-        return 'SaveBlock({}) with {} properties and {} loops'.format(
-            self.name, len(self.properties), len(self.loops))
+        return 'SaveBlock({}):\n\tproperties: \n\t\t{}\n\tloops: \n\t\t{}'.format(
+            self.name,
+            '\n\t\t'.join(self.properties.keys()),
+            '\n\t\t'.join(self.loops.keys()))
 
 
 class NmrStarAccessor(OrderedDict):
