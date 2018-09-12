@@ -82,10 +82,8 @@ class NmrStarSaveBlock(object):
 
     def short_string(self):
 
-        return 'SaveBlock({}):\n\tproperties: \n\t\t{}\n\tloops: \n\t\t{}'.format(
-            self.name,
-            '\n\t\t'.join(self.properties.keys()),
-            '\n\t\t'.join(self.loops.keys()))
+        return 'SaveBlock({}) with {} properties and {} loops'.format(
+            self.name, len(self.properties), len(self.loops))
 
 
 class NmrStarAccessor(OrderedDict):
@@ -102,7 +100,13 @@ class NmrStarAccessor(OrderedDict):
         super(NmrStarAccessor, self).__init__()
 
         self.file = file
-        self.__parse()
+        self.__parse()      # parses file into native Python structures
+        self.__id__ = int(self['Entry']['ID'])
+
+    @property
+    def id(self):
+
+        return self.__id__
 
     def __parse(self):
 
@@ -164,12 +168,20 @@ class NmrStarAccessor(OrderedDict):
                 # multi-line entry data
                 elif line.startswith(';'):
                     IN_LABL = not IN_LABL
+                    if not IN_LABL:
+                        c_save.add_property(var, value)
+                        continue
+                    value = ''
                 # regular entry in save_ block
                 elif line.startswith('_'):
                     r = entry_p.search(line)
                     c_name = r.group('name')
                     var, value = r.group('var'), r.group('value')
                     c_save.add_property(var, value)
+                elif IN_LABL:
+                    if len(value) != 0:
+                        value += ' '
+                    value += line
 
     def __str__(self):
 

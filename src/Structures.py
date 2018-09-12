@@ -13,6 +13,7 @@ import numpy as np
 import pandas as pd
 
 from common import *
+from IO import *
 
 
 class Protein(object):
@@ -23,7 +24,7 @@ class Protein(object):
 
     Defines following fields:
         sequence : 3-letter amino acid sequence
-        size     : number of amino acids
+        size     : number of amino acids in assignable sequence
         residues : pandas dataframe with known frequencies (if any)
         locs     : pandas dataframe with mean of atom chemical shifts
         scales   : pandas dataframe with standard deviation of atom chemical shifts
@@ -37,6 +38,8 @@ class Protein(object):
 
     def __init__(self, nmrstar=None, sequence=None):
 
+        self.bmrb = None
+
         if nmrstar is not None:
             self.__setup_from_nmrstar(nmrstar)
         elif sequence is not None:
@@ -46,7 +49,62 @@ class Protein(object):
 
     def __setup_from_nmrstar(self, nmrstar):
 
-        pass
+        # parse file
+        self.bmrb = NmrStarAccessor(nmrstar)
+
+        # useful table
+        comp = self.bmrb['Entity']['Entity_comp_index']
+
+        # figure out sequences
+        auth_id = comp['Auth_seq_ID']
+        try:
+            auth_id = auth_id.astype('int32')
+        except ValueError:
+            print 'no Auth_seq_ID, using regular ID'
+            auth_id = None
+        seq_id = comp['ID'].astype('int32')
+
+        # number of assignable monomers
+        if auth_id is None:
+            self.size = seq_id.max()
+        else:
+            self.size = min(auth_id.max(), seq_id.max())
+
+        # assignable sequence
+        if auth_id is not None:
+            if auth_id.max() < seq_id.max():
+                self.sequence = comp['Comp_ID'].loc[auth_id > 0].as_matrix()
+            elif auth_id.max() >= seq_id.max():
+                self.sequence = comp['Comp_ID'].loc[seq_id > 0].as_matrix()
+        else:
+            self.sequence = comp['Comp_ID'].loc[seq_id > 0].as_matrix()
+
+        # chemical shifts
+        c_shifts = self.bmrb['Assigned_chem_shift_list']['Atom_chem_shift']
+        if auth_id is None or auth_id.max() >= seq_id.max():
+            res_no = c_shifts['Seq_ID'].astype('int32').as_matrix()
+        else:
+            res_no = c_shifts['Auth_seq_ID'].astype('int32').as_matrix()
+        res_type = c_shifts['Comp_ID'].as_matrix()
+        atm_type = c_shifts['Atom_ID'].as_matrix()
+        values = c_shifts['Val'].astype('float64').as_matrix()
+        self.residues = pd.DataFrame([],
+                                     index=range(self.size),
+                                     columns=set(atm_type))
+        self.locs = pd.DataFrame([],
+                                 index=range(self.size),
+                                 columns=set(atm_type))
+        self.scales = pd.DataFrame([],
+                                   index=range(self.size),
+                                   columns=set(atm_type))
+
+        for rn, rt, at, val in zip(res_no, res_type, atm_type, values):
+            self.residues.loc[rn, at] = val
+            try:
+                self.locs.loc[rn, at] = DATA['mean'].loc[rt, at]
+                self.scales.loc[rn, at] = DATA['stddev'].loc[rt, at]
+            except KeyError:
+                continue
 
     def __setup_from_sequence(self, sequence):
 
