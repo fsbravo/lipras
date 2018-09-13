@@ -141,7 +141,7 @@ class NmrStarAccessor(OrderedDict):
         IN_SAVE = False
         IN_LABL = False
 
-        entry_p = re.compile('_(?P<name>\S+?)\.(?P<var>\S+)\s*(?P<value>\S+)?')
+        entry_p = re.compile('_(?P<name>\S+?)\.(?P<var>\S+)\s*(?P<value>.+)?')
 
         # process
         with open(self.file, 'r') as f:

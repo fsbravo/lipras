@@ -17,6 +17,7 @@ import nmrstarlib
 from common import *
 from IO import *
 from spectra import *
+from Measured import *
 
 
 class Protein(object):
@@ -30,14 +31,12 @@ class Protein(object):
         size     : number of amino acids in assignable sequence
         residues : pandas dataframe with known frequencies (if any)
         locs     : pandas dataframe with mean of atom chemical shifts
-        scales   : pandas dataframe with standard deviation of atom chemical shifts
+        scales   : pandas dataframe with standard deviation of chemical shifts
         bmrb     : defined if NMR-STAR file is provided, otherwise None
 
     Data for locs and scales is obtained from BMRB data and stored in chemical_shifts.dt
 
-    Protein can be setup from either an NMRStar v3.1 file or it can be simulated
-    from a prior distribution by providing a sequence. If both are provided, the
-    function defers to the NMRStar file.
+    Protein is setup from an NMR-STAR v3.1 file.
     """
 
     def __init__(self, nmrstar):
@@ -121,12 +120,12 @@ class Protein(object):
         if spectra is None:
             return self.__read_peaks()
 
-        return self.__simulate_peaks(noise)
+        return self.__simulate_peaks(spectra, noise)
 
     def __read_peaks(self):
 
         """
-        Returns peaks from NMR-STAR file.
+        Returns measured peaks from NMR-STAR file.
         """
 
         if 'Spectral_peak_list' not in self.bmrb.keys():
@@ -137,10 +136,36 @@ class Protein(object):
         spectra = self.bmrb['Spectral_peak_list']
         for spectrum in spectra:
             name = spectrum['Experiment_name']
-            if name not in SPECTRA.keys():
-                pass
-            df1 = spectrum['Peak_general_char']
-            df2 = spectrum['Peak_char']
+            # check if we can interpret the experiment name
+            if name not in INTERPRETER.keys():
+                n_name = None
+                # if not, prompt the user for a valid translation
+                while n_name not in SPECTRA.keys() and n_name != '':
+                    n_name = raw_input(
+                        'Unknown spectra {}. '.format(name) +
+                        'Provide equivalent name from list \n\n{}\n\n'.format(
+                            '\n'.join(SPECTRA.keys())) +
+                        'or leave blank to skip. :')
+                # if no valid translation is possible, record that
+                if n_name == '':
+                    INTERPRETER[name] = None
+                    with open('spectra.pickle', 'w') as f:
+                        pickle.dump(INTERPRETER, f)
+                    continue
+                # if a valid translation exists, store it
+                else:
+                    INTERPRETER[name] = n_name
+                    with open('spectra.pickle', 'w') as f:
+                        pickle.dump(INTERPRETER, f)
+            # apply name change to standard name
+            name = INTERPRETER[name]
+            if name is None:
+                continue
+            try:
+                df1 = spectrum['Peak_general_char']
+                df2 = spectrum['Peak_char']
+            except KeyError:
+                continue
             df = df1.merge(df2, on='Peak_ID')
             intensities = df['Intensity_val'].astype('float64').as_matrix()
             c_shifts = df['Chem_shift_val'].astype('float64').as_matrix()
@@ -149,10 +174,22 @@ class Protein(object):
                 spectrum['Spectral_dim']['ID'].astype('int32').as_matrix(),
                 spectrum['Spectral_dim']['Atom_type'].as_matrix())}
 
+            # assemble peaks into correct structure (N, H, C) and determine polarities
+            n_dim = len(set(dimension))
+            # if 
+
             # peaks[name] = MeasuredPeaks(intensities, c_shifts, dimension, order)
             peaks[name] = intensities, c_shifts, dimension, order
 
         return peaks
+
+    def __simulate_peaks(self, spectra, noise):
+
+        """
+        Simulate peaks for the given spectra under the given noise conditions.
+        """
+
+        pass
 
 
 class TrueProtein(object):
