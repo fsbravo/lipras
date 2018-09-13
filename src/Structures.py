@@ -12,8 +12,11 @@ import itertools
 import numpy as np
 import pandas as pd
 
+import nmrstarlib
+
 from common import *
 from IO import *
+from spectra import *
 
 
 class Protein(object):
@@ -28,6 +31,7 @@ class Protein(object):
         residues : pandas dataframe with known frequencies (if any)
         locs     : pandas dataframe with mean of atom chemical shifts
         scales   : pandas dataframe with standard deviation of atom chemical shifts
+        bmrb     : defined if NMR-STAR file is provided, otherwise None
 
     Data for locs and scales is obtained from BMRB data and stored in chemical_shifts.dt
 
@@ -36,16 +40,11 @@ class Protein(object):
     function defers to the NMRStar file.
     """
 
-    def __init__(self, nmrstar=None, sequence=None):
+    def __init__(self, nmrstar):
 
         self.bmrb = None
 
-        if nmrstar is not None:
-            self.__setup_from_nmrstar(nmrstar)
-        elif sequence is not None:
-            self.__setup_from_sequence(sequence)
-        else:
-            raise ValueError('An NMRStar file or a sequence must be provided!')
+        self.__setup_from_nmrstar(nmrstar)
 
     def __setup_from_nmrstar(self, nmrstar):
 
@@ -55,7 +54,7 @@ class Protein(object):
         # useful table
         comp = self.bmrb['Entity']['Entity_comp_index']
 
-        # figure out sequences
+        # sequences
         auth_id = comp['Auth_seq_ID']
         try:
             auth_id = auth_id.astype('int32')
@@ -106,9 +105,54 @@ class Protein(object):
             except KeyError:
                 continue
 
-    def __setup_from_sequence(self, sequence):
+        self.sequence = res_type
 
-        pass
+    def generate_peaks(self, spectra, noise=None):
+
+        """
+        Return real or simulated peaks.
+
+        If spectra is None, attempt to return peak lists defined in NMR-STAR file.
+        """
+
+        if spectra is None and self.bmrb is None:
+            raise ValueError('spectra must be provided if no NMR-STAR file exists')
+
+        if spectra is None:
+            return self.__read_peaks()
+
+        return self.__simulate_peaks(noise)
+
+    def __read_peaks(self):
+
+        """
+        Returns peaks from NMR-STAR file.
+        """
+
+        if 'Spectral_peak_list' not in self.bmrb.keys():
+            return None
+
+        peaks = {}
+
+        spectra = self.bmrb['Spectral_peak_list']
+        for spectrum in spectra:
+            name = spectrum['Experiment_name']
+            if name not in SPECTRA.keys():
+                pass
+            df1 = spectrum['Peak_general_char']
+            df2 = spectrum['Peak_char']
+            df = df1.merge(df2, on='Peak_ID')
+            intensities = df['Intensity_val'].astype('float64').as_matrix()
+            c_shifts = df['Chem_shift_val'].astype('float64').as_matrix()
+            dimension = df['Spectral_dim_ID'].astype('int32').as_matrix()
+            order = {k: v for k, v in zip(
+                spectrum['Spectral_dim']['ID'].astype('int32').as_matrix(),
+                spectrum['Spectral_dim']['Atom_type'].as_matrix())}
+
+            # peaks[name] = MeasuredPeaks(intensities, c_shifts, dimension, order)
+            peaks[name] = intensities, c_shifts, dimension, order
+
+        return peaks
 
 
 class TrueProtein(object):

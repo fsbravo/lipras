@@ -86,6 +86,32 @@ class NmrStarSaveBlock(object):
             self.name, len(self.properties), len(self.loops))
 
 
+class NmrStarMultiSave(list):
+
+    """
+    A list of multiple save blocks.
+    """
+
+    def __init__(self, name):
+
+        self.name = name
+        super(NmrStarMultiSave, self).__init__()
+
+    def __str__(self):
+
+        return '{} save blocks\n\t\t{}'.format(
+            len(self), '\n\t\t'.join([c.short_string() for c in self]))
+
+    def __repr__(self):
+
+        return '{} save blocks\n\t\t{}'.format(
+            len(self), '\n\t\t'.join([c.short_string() for c in self]))
+
+    def short_string(self):
+
+        return self.__str__()
+
+
 class NmrStarAccessor(OrderedDict):
 
     """
@@ -150,7 +176,14 @@ class NmrStarAccessor(OrderedDict):
                 # save_ block end
                 elif line.startswith('save_') and IN_SAVE:
                     IN_SAVE = False
-                    self[c_name] = c_save
+                    if c_name in self.keys():
+                        if not isinstance(self[c_name], NmrStarMultiSave):
+                            tmp = self[c_name]
+                            self[c_name] = NmrStarMultiSave(c_name)
+                            self[c_name].append(tmp)
+                        self[c_name].append(c_save)
+                    else:
+                        self[c_name] = c_save
                     continue
                 # ### regular (data) line
                 # line within loop
