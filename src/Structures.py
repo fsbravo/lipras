@@ -106,21 +106,76 @@ class Protein(object):
 
         self.sequence = res_type
 
-    def generate_peaks(self, spectra, noise=None):
+
+class Experiment(object):
+
+    """
+    Object representing NMR assignment experiments for simulation.
+
+    A protein object is required to initialize the experiment. The experiment
+    consists of a set of measured peak lists or spin systems constructed from
+    the assigned frequencies for the given protein.
+
+    Expected peak lists can also be generated, indexed by a fixed labeling of
+    the assignable atoms. These can be interfaced with the Assigner objects
+    defined in SpinSystemAssigner.py and FreeAssigner.py
+    """
+
+    def __init__(self, protein, spectra=SPECTRA.keys(), mparams={}):
 
         """
-        Return real or simulated peaks.
-
-        If spectra is None, attempt to return peak lists defined in NMR-STAR file.
+        Initialize experiment.
         """
 
-        if spectra is None and self.bmrb is None:
-            raise ValueError('spectra must be provided if no NMR-STAR file exists')
+        self.sequence = protein.sequence
+        self.size = protein.size
+        self.atoms, self.expected = self.__get_assignable(spectra)
+        self.measured = self.__generate_measured(spectra)
 
-        if spectra is None:
-            return self.__read_peaks()
+    def __get_assignable(self, spectra):
 
-        return self.__simulate_peaks(spectra, noise)
+        """
+        Generate assignable atoms and expected peaks/
+        """
+
+        expected = {}
+        atoms = set()
+        for sp_name in spectra:
+            spectrum = SPECTRA[sp_name]
+            peaks = []
+            for peak in spectrum['peaks']:
+                for i, residue in enumerate(self.sequence):
+                    cur = []
+                    for atm, delta in peak:
+                        if i+delta < 0 or i+delta >= self.size:
+                            continue
+                        atoms.add((atm, i+delta))
+                        cur.append((atm, i+delta))
+                    peaks.append(cur)
+            expected[sp_name] = peaks
+
+
+
+
+    def __generate_expected(self, spectra):
+
+        """
+        Generate expected peak lists based on atom ordering in self.atoms.
+
+        Available spectra are specified in common.py.
+        """
+
+        pass
+
+    def __generate_measured(self, spectra, noise=None):
+
+        """
+        Simulates peaks for given spectra assuming a normal distribution.
+
+        Available spectra are specified in common.py.
+        """
+
+        pass
 
     def __read_peaks(self):
 
@@ -182,14 +237,6 @@ class Protein(object):
             peaks[name] = intensities, c_shifts, dimension, order
 
         return peaks
-
-    def __simulate_peaks(self, spectra, noise):
-
-        """
-        Simulate peaks for the given spectra under the given noise conditions.
-        """
-
-        pass
 
 
 class TrueProtein(object):

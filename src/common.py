@@ -1,6 +1,6 @@
 import pickle
 
-SPECTRA_2 = {
+SPECTRA = {
     'HSQC': {
         'peaks': ((('N', 0), ('H', 0)), ),
         'polarities': (1, ),
@@ -81,9 +81,6 @@ PARAMS = {
 
 with open('chemical_shifts.dt', 'r') as fin:
     DATA = pickle.load(fin)
-
-with open('spectra.pickle', 'r') as fin:
-    INTERPRETER = pickle.load(fin)
 
 THREE_TO_ONE = {
     'ALA': 'A',
