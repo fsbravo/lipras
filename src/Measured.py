@@ -98,14 +98,14 @@ class MeasuredSpectrum(object):
     Spectrum (collection of measured peaks)
     """
 
-    def __init__(self, name, experiment, peaks=None):
+    def __init__(self, name, data, peaks=None):
 
         self.name = name
         if peaks is not None:
             self.peaks = peaks
         else:
-            peaks = experiment.measured_peaks[name]
-            polarity = experiment.m_polarities[name]
+            peaks = data['peaks'][name]
+            polarity = data['polarities'][name]
             us = np.eye(peaks.shape[0])
             self.peaks = [MeasuredPeak(name, p, pl, u) for
                           p, pl, u in zip(peaks, polarity, us)]
@@ -229,15 +229,15 @@ class MeasuredPeaks(dict):
 
     _ids = count(0)
 
-    def __init__(self, experiment=None, spectra=None, ushape=None, *varargs, **kwargs):
+    def __init__(self, data=None, spectra=None, ushape=None, *varargs, **kwargs):
 
-        assert experiment is not None or spectra is not None, \
+        assert data is not None or spectra is not None, \
             'one of experiment or spectra must be provided'
 
-        if experiment is not None:
-            for spectrum in experiment.measured_peaks.keys():
+        if data is not None:
+            for spectrum in data['peaks'].keys():
                 self[spectrum] = MeasuredSpectrum(
-                    spectrum, experiment)
+                    spectrum, data)
             self.__ushape__ = OrderedDict(
                 [(key, self[key].u.shape[-1]) for key in self.keys()])
             # self.__ushape__ = {key: self[key].u.shape[-1] for key in self.keys()}
@@ -327,9 +327,9 @@ class Measured(MeasuredPeaks):
     Measured peaks with graph functionalities.
     """
 
-    def __init__(self, experiment=None, spectra=None, ushape=None, peaks=None):
+    def __init__(self, data=None, spectra=None, ushape=None, peaks=None):
 
-        super(Measured, self).__init__(experiment, spectra, ushape)
+        super(Measured, self).__init__(data, spectra, ushape)
 
         self.G = nx.Graph()
         self.G_C = nx.Graph()

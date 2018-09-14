@@ -69,6 +69,20 @@ SCHEDULE = (
 SPECTRA_ORDER = ('HSQC', 'HNCO', 'HN(CO)CA', 'HNCA',
                  'HN(CO)CACB', 'HN(CA)CO', 'HNCACB')
 
+NOISE_PARAMS = {
+  'FLYA': {
+    'tolerance': {'C': 0.4, 'CA': 0.4, 'CB': 0.4, 'N': 0.4, 'H': 0.03},
+    'std': {'C': 0.1, 'CA': 0.1, 'CB': 0.1, 'N': 0.1, 'H': 0.03/4},
+    'threshold': True
+  },
+  'IPASS': {
+    'tolerance': {'C': 0.4, 'CA': 0.4, 'CB': 0.4, 'N': 0.4, 'H': 0.04, 'HN': 0.04},
+    'std': {'C': 0.4/2.5, 'CA': 0.4/2.5, 'CB': 0.4/2.5, 'N': 0.4/2.5,
+            'H': 0.04, 'HN': 0.04},
+    'threshold' : False
+  }
+}
+
 PARAMS = {
     'noise': {'C': 0.16, 'CA': 0.16, 'CB': 0.16, 'N': 0.16, 'H': 0.016},
     'tolerance': {'C': 0.4, 'CA': 0.4, 'CB': 0.4, 'N': 0.4, 'H': 0.03},
@@ -82,6 +96,7 @@ PARAMS = {
 with open('chemical_shifts.dt', 'r') as fin:
     DATA = pickle.load(fin)
 
+# OTHER
 THREE_TO_ONE = {
     'ALA': 'A',
     'ARG': 'R',

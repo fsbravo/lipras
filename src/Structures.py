@@ -16,8 +16,23 @@ import nmrstarlib
 
 from common import *
 from IO import *
-from spectra import *
 from Measured import *
+from Expected import *
+
+import scipy.stats as sps
+
+
+def additive_noise(atm_type, model='FLYA'):
+
+    std = NOISE_PARAMS[model]['std']
+    if atm_type not in std.keys():
+        atm_type = atm_type[0]
+    val = sps.norm.rvs() * std[atm_type]
+    if NOISE_PARAMS[model]['threshold']:
+        tol = NOISE_PARAMS[model]['tolerance'][atm_type]
+        while val > tol or val < -tol:
+            val = sps.norm.rvs() * std[atm_type]
+    return val
 
 
 class Protein(object):
@@ -113,15 +128,18 @@ class Experiment(object):
     Object representing NMR assignment experiments for simulation.
 
     A protein object is required to initialize the experiment. The experiment
-    consists of a set of measured peak lists or spin systems constructed from
-    the assigned frequencies for the given protein.
+    consists of a set of measured peak lists and expected peaks lists.
 
-    Expected peak lists can also be generated, indexed by a fixed labeling of
-    the assignable atoms. These can be interfaced with the Assigner objects
-    defined in SpinSystemAssigner.py and FreeAssigner.py
+    This object is an intermediate data format, intended to provide a summary
+    of the available experimental data.
+
+    Fields:
+        :measured: dictionary of spectrum names to value arrays
+        :expected: dictionary of spectrum names to atom indices
+        :atoms:    list of tuples (atom_type, residue_number)
     """
 
-    def __init__(self, protein, spectra=SPECTRA.keys(), mparams={}):
+    def __init__(self, protein, spectra=SPECTRA.keys(), noise_model='FLYA'):
 
         """
         Initialize experiment.
@@ -130,44 +148,67 @@ class Experiment(object):
         self.sequence = protein.sequence
         self.size = protein.size
         self.atoms, self.expected = self.__get_assignable(spectra)
-        self.measured = self.__generate_measured(spectra)
+        self.measured = self.__generate_measured(spectra, protein, noise_model)
 
     def __get_assignable(self, spectra):
 
         """
-        Generate assignable atoms and expected peaks/
+        Generate assignable atoms and expected peaks.
         """
 
         expected = {}
+        polarities = {}
+        residues = {}
         atoms = set()
+
+        # determine atoms and initialize peaks
         for sp_name in spectra:
             spectrum = SPECTRA[sp_name]
             peaks = []
-            for peak in spectrum['peaks']:
+            pol = []
+            res = []
+            # run through peaks in spectrum
+            for peak_pol, peak in zip(spectrum['polarities'], spectrum['peaks']):
+                # create every valid peak along protein chain
                 for i, residue in enumerate(self.sequence):
-                    cur = []
-                    for atm, delta in peak:
-                        if i+delta < 0 or i+delta >= self.size:
-                            continue
-                        atoms.add((atm, i+delta))
-                        cur.append((atm, i+delta))
+                    # peak in terms of (atom_type, residue_no) tuples
+                    cur = [(atm, i+delta) for atm, delta in peak]
+                    valid = True
+                    for atm, pos in cur:
+                        if pos < 0 or pos >= self.size:
+                            valid = False
+                    if not valid:
+                        continue
+                    for t in cur:
+                        atoms.add(t)
                     peaks.append(cur)
+                    pol.append(peak_pol)
+                    res.append(cur[0][-1])
             expected[sp_name] = peaks
+            polarities[sp_name] = pol
+            residues[sp_name] = res
 
+        atoms = list(atoms)
+        translator = {a: i for i, a in enumerate(atoms)}
 
+        peaks = {}
+        for sp_name in spectra:
+            cur = expected[sp_name]
+            peaks[sp_name] = [
+                [translator[atm] for atm in peak] for peak in cur]
 
+        data = {
+            'peaks': peaks,
+            'residues': residues,
+            'polarities': polarities,
+            'sequence': self.sequence
+        }
 
-    def __generate_expected(self, spectra):
+        expected = ExpectedPeaks(data=data)
 
-        """
-        Generate expected peak lists based on atom ordering in self.atoms.
+        return atoms, expected
 
-        Available spectra are specified in common.py.
-        """
-
-        pass
-
-    def __generate_measured(self, spectra, noise=None):
+    def __generate_measured(self, spectra, protein, noise_model='FLYA'):
 
         """
         Simulates peaks for given spectra assuming a normal distribution.
@@ -175,7 +216,34 @@ class Experiment(object):
         Available spectra are specified in common.py.
         """
 
-        pass
+        peaks = {}
+        polarities = {}
+
+        # generate measured peaks
+        for sp_name in spectra:
+            spectrum = []
+            pol = []
+            expected = self.expected[sp_name]
+            for peak in expected.peaks:
+                pol.append(peak.polarity)
+                m_peak = []
+                for atm_no in peak.value:
+                    atm_type, res_no = self.atoms[atm_no]
+                    try:
+                        loc = protein.residues.loc[res_no, atm_type]
+                    except KeyError:
+                        loc = np.nan
+                    m_peak.append(loc + additive_noise(atm_type, noise_model))
+                if np.any(np.isnan(m_peak)):
+                    continue
+                spectrum.append(m_peak)
+            peaks[sp_name] = np.array(spectrum)
+            polarities[sp_name] = np.array(pol, dtype=np.int32)
+
+        data = {'peaks': peaks,
+                'polarities': polarities}
+
+        return Measured(data=data)
 
     def __read_peaks(self):
 
