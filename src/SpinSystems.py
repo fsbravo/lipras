@@ -40,9 +40,11 @@ class SpinSystem(object):
 
 class SpinSystemSet(list):
 
-    def __init__(self, data):
+    def __init__(self, data, scheme):
 
         super(SpinSystemSet, self).__init__()
+
+        self.scheme = scheme
 
         u_max = data.shape[0]
         for i, values in enumerate(data):
@@ -60,3 +62,13 @@ class SpinSystemSet(list):
     def value(self):
 
         return self.__value__
+
+    def __repr__(self):
+
+        return 'Spin system set with {} spin systems.\n\tScheme: {}'.format(
+            len(self)-1, self.scheme)
+
+    def __str__(self):
+
+        return 'Spin system set with {} spin systems.\n\tScheme: {}'.format(
+            len(self)-1, self.scheme)

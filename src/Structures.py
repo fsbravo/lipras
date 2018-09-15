@@ -31,7 +31,7 @@ def additive_noise(atm_type, noise_model):
         atm_type = atm_type[0]
     val = sps.norm.rvs() * stddev[atm_type]
 
-    if NOISE_PARAMS[model]['threshold']:
+    if NOISE_PARAMS[noise_model]['threshold']:
         tol = NOISE_PARAMS[noise_model]['tolerance'][atm_type]
         while val > tol or val < -tol:
             val = sps.norm.rvs() * stddev[atm_type]
@@ -161,6 +161,16 @@ class Protein(object):
                     atom_type = 'H'
                 self.residues.loc[atom_type, residue] = float(shift)
 
+    def __repr__(self):
+
+        return 'Protein (ID: {}, {}) with {} residues.'.format(
+            self.bmrb.id, self.bmrb.title, self.size)
+
+    def __str__(self):
+
+        return 'Protein (ID: {}, {}) with {} residues.'.format(
+            self.bmrb.id, self.bmrb.title, self.size)
+
 
 class Experiment(object):
 
@@ -179,7 +189,13 @@ class Experiment(object):
         :atoms:    list of tuples (atom_type, residue_number)
     """
 
-    def __init__(self, protein, spectra=SPECTRA.keys(), noise_model='FLYA'):
+    def __init__(self, protein, spectra=SPECTRA.keys(),
+                 make_peaks=True,
+                 peak_noise_model='FLYA',
+                 make_spins=True,
+                 spin_noise_model='IPASS',
+                 spin_scheme=SPIN_SYSTEM_ORDER,
+                 spin_file=None):
 
         """
         Initialize experiment.
@@ -189,7 +205,20 @@ class Experiment(object):
         self.sequence = protein.sequence
         self.size = protein.size
         self.atoms, self.expected = self.__get_assignable(spectra)
-        self.measured = self.__generate_measured(spectra, protein, noise_model)
+        if make_peaks:
+            self.measured = self.__generate_measured(spectra, protein, peak_noise_model)
+        else:
+            self.measured = None
+        if make_spins:
+            if spin_file is None:
+                self.spin_systems = self.__generate_spin_systems(spin_scheme, spin_noise_model)
+            else:
+                self.spin_systems = self.__read_spin_systems(spin_file)
+            self.true_spin_systems = self.__generate_spin_systems(spin_scheme, None)
+        else:
+            self.spin_systems = None
+            self.true_spin_systems = None
+
 
     def __get_assignable(self, spectra):
 
@@ -347,7 +376,7 @@ class Experiment(object):
 
         return peaks
 
-    def generate_spin_systems(self, scheme=SPIN_SYSTEM_ORDER, noise_model='IPASS'):
+    def __generate_spin_systems(self, scheme, noise_model):
 
         """
         Create spin systems from assigned chemical shifts.
@@ -356,13 +385,15 @@ class Experiment(object):
         any additive gaussian noise to be added.
         """
 
+        self.spin_scheme = scheme
+
         spins = []
         for i in range(self.size):
             cur = []
             for atm_type, delta in scheme:
                 try:
                     value = self.protein.residues.loc[i+delta, atm_type]
-                    if noise_model and delta == 0:
+                    if noise_model is not None and delta == 0:
                         value += additive_noise(atm_type, noise_model)
                 except KeyError:
                     value = np.nan
@@ -374,13 +405,15 @@ class Experiment(object):
 
         data = np.array(spins)
 
-        return SpinSystemSet(data)
+        return SpinSystemSet(data, scheme)
 
-    def read_spin_systems(self, spin_file, scheme=SPIN_SYSTEM_ORDER):
+    def __read_spin_systems(self, spin_file, scheme):
 
         """
         Reads spin systems from file.
         """
+
+        self.spin_scheme = scheme
 
         spins = []
 
@@ -397,4 +430,14 @@ class Experiment(object):
 
         data = np.array(spins)
 
-        return SpinSystemSet(data)
+        return SpinSystemSet(data, scheme)
+
+    def __repr__(self):
+
+        return 'Experiment on {}\n{}\n{}\n{}'.format(
+            self.protein, self.expected, self.measured, self.spin_systems)
+
+    def __str__(self):
+
+        return 'Experiment on {}\n{}\n{}\n{}'.format(
+            self.protein, self.expected, self.measured, self.spin_systems)

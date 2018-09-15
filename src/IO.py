@@ -128,11 +128,17 @@ class NmrStarAccessor(OrderedDict):
         self.file = file
         self.__parse()      # parses file into native Python structures
         self.__id__ = int(self['Entry']['ID'])
+        self.__title__ = self['Entry']['Title']
 
     @property
     def id(self):
 
         return self.__id__
+
+    @property
+    def title(self):
+
+        return self.__title__
 
     def __parse(self):
 
