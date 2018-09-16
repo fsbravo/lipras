@@ -6,7 +6,7 @@ import numpy as np
 
 class SpinSystem(object):
 
-    def __init__(self, value, i, u, empty=False):
+    def __init__(self, value, i, empty=False):
 
         self.value = value
         if empty:
@@ -14,7 +14,7 @@ class SpinSystem(object):
             self.empty = True
         else:
             self.empty = False
-        self.__u__ = u
+        self.__u__ = [i]
         self.__id__ = i
 
     @property
@@ -29,13 +29,11 @@ class SpinSystem(object):
 
     def __repr__(self):
 
-        return 'SpinSystem({}, id={})'.format(
-            super(SpinSystem, self).__repr__(), self.id)
+        return 'SpinSystem({}, id={})'.format(self.value, self.id)
 
     def __str__(self):
 
-        return 'SpinSystem({}, id={})'.format(
-            super(SpinSystem, self).__str__(), self.id)
+        return 'SpinSystem({}, id={})'.format(self.value, self.id)
 
 
 class SpinSystemSet(list):
@@ -48,13 +46,10 @@ class SpinSystemSet(list):
 
         u_max = data.shape[0]
         for i, values in enumerate(data):
-            u = np.zeros(u_max, dtype=np.int32)
-            u[i] = 1
-            self.append(SpinSystem(values, i, u))
+            self.append(SpinSystem(values, i))
 
         # add empty spin system
-        u = np.zeros(u_max, dtype=np.int32)
-        self.append(SpinSystem(np.ones(values.shape)*np.nan, i+1, u, empty=True))
+        self.append(SpinSystem(np.ones(values.shape)*np.nan, i+1, empty=True))
 
         self.__value__ = data
 

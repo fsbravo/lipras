@@ -19,11 +19,10 @@ class MeasuredPeak(object):
 
     _ids = count(0)
 
-    def __init__(self, spectrum, values, polarity, u):
+    def __init__(self, spectrum, values, polarity):
 
         self.spectrum = spectrum
         self.polarity = polarity
-        self.__u__ = u
         self.__values__ = values
         self.tolerance = np.array([PARAMS['tolerance']['N'],
                                    PARAMS['tolerance']['H'],
@@ -53,7 +52,7 @@ class MeasuredPeak(object):
     @property
     def u(self):
 
-        return self.__u__
+        return self.__id__
 
     def __repr__(self):
 
@@ -106,10 +105,9 @@ class MeasuredSpectrum(object):
         else:
             peaks = data['peaks'][name]
             polarity = data['polarities'][name]
-            us = np.eye(peaks.shape[0])
-            self.peaks = [MeasuredPeak(name, p, pl, u) for
-                          p, pl, u in zip(peaks, polarity, us)]
-        self.__u__ = np.array([p.u for p in self.peaks])
+            self.peaks = [MeasuredPeak(name, peak, pol) for
+                          peak, pol in zip(peaks, polarity)]
+        self.__u__ = [p.u for p in self.peaks]
         self.__value__ = np.array([p.value for p in self.peaks])
         self.__polarities__ = np.array([p.polarity for p in self.peaks])
 
@@ -239,8 +237,7 @@ class MeasuredPeaks(dict):
                 self[spectrum] = MeasuredSpectrum(
                     spectrum, data)
             self.__ushape__ = OrderedDict(
-                [(key, self[key].u.shape[-1]) for key in self.keys()])
-            # self.__ushape__ = {key: self[key].u.shape[-1] for key in self.keys()}
+                [(key, self[key].value.shape[0]) for key in self.keys()])
         else:
             for spectrum in spectra:
                 self[spectrum.name] = spectrum

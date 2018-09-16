@@ -213,7 +213,7 @@ class Experiment(object):
             if spin_file is None:
                 self.spin_systems = self.__generate_spin_systems(spin_scheme, spin_noise_model)
             else:
-                self.spin_systems = self.__read_spin_systems(spin_file)
+                self.spin_systems = self.__read_spin_systems(spin_file, spin_scheme)
             self.true_spin_systems = self.__generate_spin_systems(spin_scheme, None)
         else:
             self.spin_systems = None
