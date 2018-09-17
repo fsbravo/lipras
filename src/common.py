@@ -171,6 +171,14 @@ TESTS['bmr4353'] = './data/NMRStar/4353.txt'
 TESTS['bmr4207'] = './data/NMRStar/4027.txt'
 TESTS['bmr4318'] = './data/NMRStar/4318.txt'
 TESTS['sh2'] = './data/NMRStar/SH2.txt'
+TESTS['16850'] = {
+    'bmrb': './data/NMRStar/16850.txt',
+    'peaks_from_file': (
+        {'name': 'HSQC', 'index': 0, 'order': {1: 'H', 2: 'N'}},
+        {'name': 'HNCACB', 'index': 1, 'order': {1: 'H', 2: 'N', 3: 'C'}},
+        {'name': 'HNCA', 'index': 3, 'order': {1: 'H', 2: 'N', 3: 'C'}}
+    )
+}
 
 IPASS_SETTINGS = {
     'tolerance': {

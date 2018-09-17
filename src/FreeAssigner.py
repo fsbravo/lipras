@@ -104,11 +104,6 @@ class AtomFA(Atom):
                                         self.residue_type)
 
     @property
-    def live_box(self):
-
-        return Box(self.lower, self.higher)
-
-    @property
     def value(self):
 
         return self.__value__
@@ -285,8 +280,8 @@ class AssignerFA(Assigner):
 
     def _setup(self):
 
-        self.peaks = ExpectedPeaks(self.experiment)
-        self.measured = Measured(self.experiment)
+        self.peaks = self.experiment.expected
+        self.measured = self.experiment.measured
         self.residues = []
         atoms = [(t[0], t[1], i) for i, t in enumerate(self.experiment.atoms)]
         for i in range(self.n):

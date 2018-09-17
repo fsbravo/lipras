@@ -181,9 +181,9 @@ class Protein(object):
         try:
             df1 = spectrum['Peak_general_char']
             df2 = spectrum['Peak_char']
-        except KeyError:
+        except KeyError as e:
             print 'Unreadable spectrum'
-            return None
+            raise e
         df = df1.merge(df2, on='Peak_ID')
         intensities = df['Intensity_val'].astype('float64').as_matrix()
         c_shifts = df['Chem_shift_val'].astype('float64').as_matrix()
@@ -234,6 +234,7 @@ class Experiment(object):
     def __init__(self, protein, spectra=SPECTRA.keys(),
                  make_peaks=True,
                  peak_noise_model='FLYA',
+                 peaks_from_file=None,
                  make_spins=True,
                  spin_noise_model='IPASS',
                  spin_scheme=SPIN_SYSTEM_ORDER,
@@ -248,7 +249,11 @@ class Experiment(object):
         self.size = protein.size
         self.atoms, self.expected = self.__get_assignable(spectra)
         if make_peaks:
-            self.measured = self.__generate_measured(spectra, protein, peak_noise_model)
+            if peaks_from_file is not None:
+                self.measured = self.__read_measured(protein, peaks_from_file)
+            else:
+                self.measured = self.__generate_measured(
+                    spectra, protein, peak_noise_model, peak_file)
         else:
             self.measured = None
         if make_spins:
@@ -260,7 +265,6 @@ class Experiment(object):
         else:
             self.spin_systems = None
             self.true_spin_systems = None
-
 
     def __get_assignable(self, spectra):
 
@@ -319,6 +323,34 @@ class Experiment(object):
         expected = ExpectedPeaks(data=data)
 
         return atoms, expected
+
+    def __read_measured(self, protein, peaks_from_file):
+
+        """
+        Read peaks from bmrb file according to parameters in
+        peaks_from_file entries.
+
+        Each entry in peaks_from_file should include:
+            'name':     standard spectra name (see common.py)
+                        e.g. 'HSQC'
+            'index':    index of peak list in bmrb file
+                        e.g. 0
+            'order':    spectral dim ordering in bmrb file
+                        e.g. {1: 'C', 2: 'N', 3: 'H'}
+        """
+
+        peaks = {}
+        polarities = {}
+
+        for peaklist in peaks_from_file:
+            name = peaklist['name']
+            peaks[name], polarities[name] = protein.read_peak_list(
+                name, peaklist['index'], peaklist['order'])
+
+        data = {'peaks': peaks,
+                'polarities': polarities}
+
+        return Measured(data=data)
 
     def __generate_measured(self, spectra, protein, noise_model='FLYA'):
 
