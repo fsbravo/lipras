@@ -48,7 +48,22 @@ SPECTRA = {
         'polarities': (1, 1),
         'dimension': 3,
         'name': 'HN(CA)CO'
-    }
+    }#,
+    # 'CBCANH': {
+    #     'peaks': ((('N', 0), ('H', 0), ('CA', 0)),
+    #               (('N', 0), ('H', 0), ('CB', 0)),
+    #               (('N', 1), ('H', 1), ('CA', 0)),
+    #               (('N', 1), ('H', 1), ('CB', 0))),
+    #     'polarities': (1, -1, 1, -1),
+    #     'dimension': 3,
+    #     'name': 'CBCANH'
+    # },
+    # 'CBCA(CO)NH': {
+    #     'peaks': ((('N', 1), ('H', 1), ('CA', 0)),
+    #               (('N', 1), ('H', 1), ('CB', 0))),
+    #     'polarities': (1, 1),
+    #     'dimension': 3,
+    #     'name': 'CBCA(CO)NH'
 }
 
 SCHEDULE = (
@@ -92,6 +107,8 @@ PARAMS = {
     'half_tol_threshold': 0.3,
     'n_samples': 100
 }
+
+DIMENSION_ORDER = {'N': 0, 'H': 1, 'C': 2}
 
 with open('chemical_shifts.dt', 'r') as fin:
     DATA = pickle.load(fin)

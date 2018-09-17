@@ -161,6 +161,48 @@ class Protein(object):
                     atom_type = 'H'
                 self.residues.loc[atom_type, residue] = float(shift)
 
+    def read_peak_list(self, name, index, order):
+
+        """
+        Returns measured peaks from NMR-STAR file.
+
+        :name:      standard name of experiment (e.g. 'HSQC', see common.py for other options)
+        :index:     index of peaklist in file (e.g. 0)
+        :order:     dictionary of spectral dimensions (e.g. {1: 'N', 2: 'H', 3: 'C'})
+
+        These are required to resolve ubiquitous labeling errors in NMR-STAR files.
+        """
+
+        if 'Spectral_peak_list' not in self.bmrb.keys():
+            raise Exception('No spectral peak lists in NMR-STAR file!')
+
+        spectrum = self.bmrb['Spectral_peak_list'][index]
+
+        try:
+            df1 = spectrum['Peak_general_char']
+            df2 = spectrum['Peak_char']
+        except KeyError:
+            print 'Unreadable spectrum'
+            return None
+        df = df1.merge(df2, on='Peak_ID')
+        intensities = df['Intensity_val'].astype('float64').as_matrix()
+        c_shifts = df['Chem_shift_val'].astype('float64').as_matrix()
+        peak_ids = df['Peak_ID'].astype('int32').as_matrix()
+        dimensions = df['Spectral_dim_ID'].astype('int32').as_matrix()
+
+        # assemble peaks into correct structure (N, H, C) and determine polarities
+        n_dim = len(set(dimensions))
+        n_peaks = np.max(peak_ids)
+
+        peaks = np.zeros((n_peaks, n_dim)) * np.nan
+        polarities = np.array(np.zeros(n_peaks), dtype=np.int32)
+        for i, c_shift, intensity, dim in zip(peak_ids, c_shifts, intensities, dimensions):
+            j = DIMENSION_ORDER[order[dim]]
+            peaks[i-1, j] = c_shift
+            polarities[i-1] = int(intensity > 0) * 2 - 1
+
+        return peaks, polarities
+
     def __repr__(self):
 
         return 'Protein (ID: {}, {}) with {} residues.'.format(
@@ -314,67 +356,6 @@ class Experiment(object):
                 'polarities': polarities}
 
         return Measured(data=data)
-
-    def __read_peaks(self):
-
-        """
-        Returns measured peaks from NMR-STAR file.
-        """
-
-        if 'Spectral_peak_list' not in self.bmrb.keys():
-            return None
-
-        peaks = {}
-
-        spectra = self.bmrb['Spectral_peak_list']
-        for spectrum in spectra:
-            name = spectrum['Experiment_name']
-            # check if we can interpret the experiment name
-            if name not in INTERPRETER.keys():
-                n_name = None
-                # if not, prompt the user for a valid translation
-                while n_name not in SPECTRA.keys() and n_name != '':
-                    n_name = raw_input(
-                        'Unknown spectra {}. '.format(name) +
-                        'Provide equivalent name from list \n\n{}\n\n'.format(
-                            '\n'.join(SPECTRA.keys())) +
-                        'or leave blank to skip. :')
-                # if no valid translation is possible, record that
-                if n_name == '':
-                    INTERPRETER[name] = None
-                    with open('spectra.pickle', 'w') as f:
-                        pickle.dump(INTERPRETER, f)
-                    continue
-                # if a valid translation exists, store it
-                else:
-                    INTERPRETER[name] = n_name
-                    with open('spectra.pickle', 'w') as f:
-                        pickle.dump(INTERPRETER, f)
-            # apply name change to standard name
-            name = INTERPRETER[name]
-            if name is None:
-                continue
-            try:
-                df1 = spectrum['Peak_general_char']
-                df2 = spectrum['Peak_char']
-            except KeyError:
-                continue
-            df = df1.merge(df2, on='Peak_ID')
-            intensities = df['Intensity_val'].astype('float64').as_matrix()
-            c_shifts = df['Chem_shift_val'].astype('float64').as_matrix()
-            dimension = df['Spectral_dim_ID'].astype('int32').as_matrix()
-            order = {k: v for k, v in zip(
-                spectrum['Spectral_dim']['ID'].astype('int32').as_matrix(),
-                spectrum['Spectral_dim']['Atom_type'].as_matrix())}
-
-            # assemble peaks into correct structure (N, H, C) and determine polarities
-            n_dim = len(set(dimension))
-            # if 
-
-            # peaks[name] = MeasuredPeaks(intensities, c_shifts, dimension, order)
-            peaks[name] = intensities, c_shifts, dimension, order
-
-        return peaks
 
     def __generate_spin_systems(self, scheme, noise_model):
 
