@@ -42,6 +42,20 @@ def score(values, mu, sigma, q):
         0.5 * (np.log(sigmabar) - np.log(sigma) - d*np.log(q)) - \
         0.5 * (np.sum(values ** 2)/q + mu ** 2/sigma - mubar**2/sigmabar)
 
+# pre-compute thresholds
+threshold = PARAMS['fa_threshold']
+THRESHOLDS = {}
+for atm_type in PARAMS['tolerance'].keys():
+    tol = PARAMS['tolerance'][atm_type]
+    q = PARAMS['std'][atm_type]
+    half_tol_threshold = PARAMS['half_tol_threshold']*tol
+    for res_type in DATA['stddev'].index:
+        stddev = DATA['stddev'].loc[res_type, atm_type]
+        for i in range(20):
+            values = [threshold*stddev - 2.*half_tol_threshold*(i % 2 == 0)
+                      for _ in range(i)]
+            THRESHOLDS[(atm_type, res_type, i)] = score(values, 0, stddev**2, q**2)
+
 
 class AtomFA(Atom):
 
@@ -68,7 +82,8 @@ class AtomFA(Atom):
         self.__values__ = []
 
         # peaks where atom is observed
-        self.observations = peaks.find(atom_id)
+        self.observations = peaks.observations[atom_id]
+        # self.observations = peaks.find(atom_id)
         # residues where atom appears
         self.residues = set([o.residue for o in self.observations])
         self.total_obs = len(self.observations)
@@ -78,18 +93,16 @@ class AtomFA(Atom):
         # thresholds
         threshold = PARAMS['fa_threshold']
         half_tol_threshold = self.tolerance * PARAMS['half_tol_threshold']
-        # values = [self.mu + threshold*self.std - 2.*self.tolerance*(i % 2 == 0)
-        #           for i in range(self.residue_obs)]
-        # more reasonable threshold
+
         values = [self.mu + threshold*self.std - 2.*half_tol_threshold*(i % 2 == 0)
                   for i in range(self.residue_obs)]
-        self.__node_threshold__ = score(values, self.mu, self.var, self.qvar)
-        # values = [self.mu + threshold*self.std - 2.*self.tolerance*(i % 2 == 0)
-        #           for i in range(self.total_obs)]
-        # more reasonable threshold
+        self.__node_threshold__ = THRESHOLDS[self.atom_type, self.residue_type, self.residue_obs]
+        # self.__node_threshold__ = score(values, self.mu, self.var, self.qvar)
+
         values = [self.mu + threshold*self.std - 2.*half_tol_threshold*(i % 2 == 0)
                   for i in range(self.total_obs)]
-        self.__edge_threshold__ = score(values, self.mu, self.var, self.qvar)
+        self.__node_threshold__ = THRESHOLDS[self.atom_type, self.residue_type, self.total_obs]
+        # self.__edge_threshold__ = score(values, self.mu, self.var, self.qvar)
 
     def __str__(self):
 

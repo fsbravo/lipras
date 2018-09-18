@@ -152,6 +152,10 @@ class ExpectedPeaks(dict):
             set(np.concatenate(
                 [s.value.reshape(-1) for s in self.values()])))
 
+        self.observations = {
+            atomid: self.find(atomid) for atomid in self.atom_list
+        }
+
     def __repr__(self):
 
         return 'ExpectedPeaks(\n\t{}\n\t)'.format(
