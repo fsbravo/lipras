@@ -91,17 +91,17 @@ class AtomFA(Atom):
             [p for p in self.observations if p.residue == residue])
 
         # thresholds
-        threshold = PARAMS['fa_threshold']
-        half_tol_threshold = self.tolerance * PARAMS['half_tol_threshold']
+        # threshold = PARAMS['fa_threshold']
+        # half_tol_threshold = self.tolerance * PARAMS['half_tol_threshold']
 
-        values = [self.mu + threshold*self.std - 2.*half_tol_threshold*(i % 2 == 0)
-                  for i in range(self.residue_obs)]
+        # values = [self.mu + threshold*self.std - 2.*half_tol_threshold*(i % 2 == 0)
+        #           for i in range(self.residue_obs)]
         self.__node_threshold__ = THRESHOLDS[self.atom_type, self.residue_type, self.residue_obs]
         # self.__node_threshold__ = score(values, self.mu, self.var, self.qvar)
 
-        values = [self.mu + threshold*self.std - 2.*half_tol_threshold*(i % 2 == 0)
-                  for i in range(self.total_obs)]
-        self.__node_threshold__ = THRESHOLDS[self.atom_type, self.residue_type, self.total_obs]
+        # values = [self.mu + threshold*self.std - 2.*half_tol_threshold*(i % 2 == 0)
+        #           for i in range(self.total_obs)]
+        self.__edge_threshold__ = THRESHOLDS[self.atom_type, self.residue_type, self.total_obs]
         # self.__edge_threshold__ = score(values, self.mu, self.var, self.qvar)
 
     def __str__(self):
