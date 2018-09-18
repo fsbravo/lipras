@@ -52,8 +52,8 @@ for atm_type in PARAMS['tolerance'].keys():
     for res_type in DATA['stddev'].index:
         stddev = DATA['stddev'].loc[res_type, atm_type]
         for i in range(20):
-            values = [threshold*stddev - 2.*half_tol_threshold*(i % 2 == 0)
-                      for _ in range(i)]
+            values = [threshold*stddev - 2.*half_tol_threshold*(j % 2 == 0)
+                      for j in range(i)]
             THRESHOLDS[(atm_type, res_type, i)] = score(values, 0, stddev**2, q**2)
 
 
@@ -130,6 +130,11 @@ class AtomFA(Atom):
     def assigned(self):
 
         return len(self.__values__) > 0
+
+    @property
+    def validly_assigned(self):
+
+        return self.assigned and (len(self.__values__) <= self.residue_obs)
 
     def assign(self, v):
 
@@ -248,6 +253,14 @@ class AtomGroupFA(AtomGroup):
 
         self.__u__ = configuration.u
 
+    @property
+    def validly_assigned(self):
+
+        for atom in self.values():
+            if not atom.validly_assigned:
+                return False
+        return True
+
 
 ######################################
 # RESIDUE ############################
@@ -316,6 +329,8 @@ class AssignerFA(Assigner):
             configurator = MeasuredConfigurator(self.peaks.keys(), clique)
             for residue in self.residues:
                 for sample in residue.samples(configurator, n=2):
+                    # if not sample.validly_assigned:
+                    #     continue
                     if sample.node_score() > sample.node_threshold:
                         self.add(sample)
 
