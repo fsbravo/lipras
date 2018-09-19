@@ -435,8 +435,7 @@ class Configuration(dict):
 
         super(Configuration, self).__init__()
 
-        u = OrderedDict([(key, np.zeros(value))
-                         for key, value in ushape.iteritems()])
+        u = []
 
         for pairing in clique:
             for atom, value in zip(pairing.epeak, pairing.mpeak.value):
@@ -444,9 +443,9 @@ class Configuration(dict):
                     self[atom].append(value)
                 except KeyError:
                     self[atom] = [value]
-            u[pairing.spectrum] += pairing.mpeak.u
+            u.append(pairing.mpeak.u)
 
-        self.__u__ = np.concatenate(u.values())
+        self.__u__ = u
 
     @property
     def u(self):

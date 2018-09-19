@@ -329,8 +329,8 @@ class AssignerFA(Assigner):
             configurator = MeasuredConfigurator(self.peaks.keys(), clique)
             for residue in self.residues:
                 for sample in residue.samples(configurator, n=2):
-                    # if not sample.validly_assigned:
-                    #     continue
+                    if not sample.validly_assigned:
+                        continue
                     if sample.node_score() > sample.node_threshold:
                         self.add(sample)
 
@@ -372,7 +372,7 @@ class AssignerFA(Assigner):
                     # adjust score for relaxation
                     self[node][o_node]['score'] = node.edge_score(o_node)
                     # TEST
-                    self[node][o_node]['relaxed'] = score - 100. * np.sum(o_node.u)
+                    self[node][o_node]['relaxed'] = score - 100. * len(o_node.u)
                     self[node][o_node]['weight'] = -self[node][o_node]['relaxed']
                     # END TEST
                     # self[node][o_node]['weight'] = -self[node][o_node]['score']
