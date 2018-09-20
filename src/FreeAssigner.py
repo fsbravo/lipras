@@ -318,6 +318,8 @@ class AssignerFA(Assigner):
                                          group_residue=i,
                                          peaks=self.peaks))
 
+        self.__u__ = self.measured.u
+
     def _create_nodes(self, verbose=False):
 
         print 'creating nodes ...'

@@ -334,6 +334,15 @@ class Measured(MeasuredPeaks):
         self._create_nodes()
         self._create_edges()
 
+        self.__u__ = []
+        for spectrum in self.values():
+            self.__u__ += spectrum.u
+
+    @property
+    def u(self):
+
+        return self.__u__
+
     def _create_nodes(self):
 
         for spectrum in self.values():

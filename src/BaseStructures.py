@@ -371,6 +371,7 @@ class Assigner(nx.DiGraph):
         self._setup()
         self._create_nodes()
         self._create_edges()
+        self.__u__ = None
 
     def add(self, node):
 
@@ -496,7 +497,6 @@ class Assigner(nx.DiGraph):
 
         print '...created binary variable of size {}!'.format(n_edges)
 
-
         # ### constraints
         print '...assembling constraints'
         # path constraints
@@ -529,10 +529,9 @@ class Assigner(nx.DiGraph):
 
         # utilization constraints
         print '   ...utilization constraints...'
-        u_vecs = [edge[1].u.reshape((1, -1)) for edge in edge_order]
-        u = np.concatenate(u_vecs, axis=0)
-        for i in range(u.shape[1]):
-            idx = np.nonzero(u[:, i] == 1)[0]
+        u_vecs = [edge[1].u for edge in edge_order]
+        for i in self.u:
+            idx = [i for i, u in enumerate(u_vecs) if i in u]
             if len(idx) > 0:
                 tmp = x[idx[0]]
                 for j in idx[1:]:
@@ -618,7 +617,9 @@ class Assigner(nx.DiGraph):
                 c = succ_sum - pred_sum == 0
             constraints.append(c)
         # utilization constraints
-        u_vecs = [edge[1].u.reshape((1, -1)) for edge in self.edge_order]
+        u_vecs = [np.zeros((1, len(self.u))) for edge in self.edge_order]
+        for i, edge in enumerate(self.edge_order):
+            u_vecs[i][edge[1].u] = 1
         print u_vecs[0].shape
         u = np.concatenate(u_vecs, axis=0)
         print u.shape
@@ -726,10 +727,9 @@ class Assigner(nx.DiGraph):
 
         # utilization constraints
         print '   ...utilization constraints...'
-        u_vecs = [edge[1].u.reshape((1, -1)) for edge in edge_order]
-        u = np.concatenate(u_vecs, axis=0)
-        for i in range(u.shape[1]):
-            idx = np.nonzero(u[:, i] == 1)[0]
+        u_vecs = [edge[1].u for edge in edge_order]
+        for i in self.u:
+            idx = [i for i, u in enumerate(u_vecs) if i in u]
             if len(idx) > 0:
                 tmp = x[idx[0]]
                 for j in idx[1:]:
