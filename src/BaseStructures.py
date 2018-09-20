@@ -524,6 +524,10 @@ class Assigner(nx.DiGraph):
                     tmp -= x[j]
                 for j in succ_edges:
                     tmp += x[j]
+            if tmp is None:
+                print 'tmp is None and something is wrong!!!'
+            else:
+                print 'tmp = ', tmp
             # variable to constrain
             if node.id == self.start.id:
                 model.addConstr(tmp == 1, 'start')
