@@ -370,9 +370,11 @@ class AssignerFA(Assigner):
                     score = node.edge_score(o_node)
                     if score < node.edge_threshold - 1.:
                         continue
+                    if np.isnan(score):
+                        continue
                     self.add_edge(node, o_node)
                     # adjust score for relaxation
-                    self[node][o_node]['score'] = node.edge_score(o_node)
+                    self[node][o_node]['score'] = score
                     # TEST
                     self[node][o_node]['relaxed'] = score - 100. * len(o_node.u)
                     self[node][o_node]['weight'] = -self[node][o_node]['relaxed']

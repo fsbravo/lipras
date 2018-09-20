@@ -1,5 +1,6 @@
 import numpy as np
 
+
 ######################################
 # SPIN SYSTEMS #######################
 ######################################
@@ -44,7 +45,6 @@ class SpinSystemSet(list):
 
         self.scheme = scheme
 
-        u_max = data.shape[0]
         for i, values in enumerate(data):
             self.append(SpinSystem(values, i))
 
@@ -53,10 +53,19 @@ class SpinSystemSet(list):
 
         self.__value__ = data
 
+        self.__u__ = []
+        for spin in self:
+            self.__u__ += spin.u
+
     @property
     def value(self):
 
         return self.__value__
+
+    @property
+    def u(self):
+
+        return self.__u__
 
     def __repr__(self):
 

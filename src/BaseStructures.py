@@ -382,6 +382,11 @@ class Assigner(nx.DiGraph):
             print 'no layer! {}'.format(node)
 
     @property
+    def u(self):
+
+        return self.__u__
+
+    @property
     def n(self):
 
         return self.__n__
@@ -558,7 +563,6 @@ class Assigner(nx.DiGraph):
         edges = [edge_order[i] for i in e_index]
         self.build_solution_graph(edges)
         print '... done!'
- 
 
     def build_solution_graph(self, edges):
 

@@ -1,4 +1,5 @@
 from BaseStructures import *
+from SpinSystems import *
 from common import *
 
 from matplotlib import pyplot as plt
@@ -189,70 +190,6 @@ class AtomGroupSS(AtomGroup):
 
 
 ######################################
-# SPIN SYSTEMS #######################
-######################################
-
-class SpinSystem(object):
-
-    def __init__(self, value, i, u, empty=False):
-
-        self.value = value
-        if empty:
-            self.value *= np.nan
-            self.empty = True
-        else:
-            self.empty = False
-        self.__u__ = u
-        self.__id__ = i
-
-    @property
-    def u(self):
-
-        return self.__u__
-
-    @property
-    def id(self):
-
-        return self.__id__
-
-    def __repr__(self):
-
-        return 'SpinSystem({}, id={})'.format(
-            super(SpinSystem, self).__repr__(), self.id)
-
-    def __str__(self):
-
-        return 'SpinSystem({}, id={})'.format(
-            super(SpinSystem, self).__str__(), self.id)
-
-
-class SpinSystemSet(list):
-
-    def __init__(self, experiment):
-
-        super(SpinSystemSet, self).__init__()
-
-        data = experiment.spin_systems
-
-        u_max = data.shape[0]
-        for i, values in enumerate(data):
-            u = np.zeros(u_max, dtype=np.int32)
-            u[i] = 1
-            self.append(SpinSystem(values, i, u))
-
-        # add empty spin system
-        u = np.zeros(u_max, dtype=np.int32)
-        self.append(SpinSystem(np.ones(values.shape)*np.nan, i+1, u, empty=True))
-
-        self.__value__ = data
-
-    @property
-    def value(self):
-
-        return self.__value__
-
-
-######################################
 # ASSIGNER ###########################
 ######################################
 
@@ -266,15 +203,16 @@ class AssignerSS(Assigner):
 
     def _setup(self):
 
-        self.spin_systems = SpinSystemSet(self.experiment)
-        self.peaks = ExpectedPeaks(self.experiment)
+        self.spin_systems = self.experiment.spin_systems
+        self.peaks = self.experiment.expected
         self.atoms = [(t[0], t[1], i) for i, t in enumerate(self.experiment.atoms)]
         self.residues = [self.peaks.subset_to(i).atom_list for i in range(self.n)]
+        self.__u__ = self.spin_systems.u
 
     def _create_nodes(self, verbose=False):
 
         print '::: Creating nodes'
-        for i, atom_list in enumerate(self.residues):
+        for i, atom_list in tqdm.tqdm(enumerate(self.residues), total=len(self.residues)):
             if verbose:
                 print '    ...residue {}'.format(i)
             atoms = [self.atoms[j] for j in atom_list]
@@ -299,12 +237,14 @@ class AssignerSS(Assigner):
         self.end.apply_spin_system(self.spin_systems[-1], self.n-1)
         self.add(self.end)
 
+        print '... created %d nodes' % len(self.nodes())
+
     def _create_edges(self, verbose=False):
 
         min_weight = np.inf
 
         print '::: Creating edges'
-        for i in range(self.n-1):
+        for i in tqdm.tqdm(range(self.n-1)):
             if verbose:
                 print '   ...layer {} -> {}'.format(i, i+1)
             layer = self.layers[i]
@@ -335,6 +275,8 @@ class AssignerSS(Assigner):
         if min_weight < 1.:
             for edge in self.edges():
                 self[edge[0]][edge[1]]['weight'] -= (min_weight - 1.)
+
+        print '... created %d edges' % len(self.edges())
 
     def recall_precision(self, path, true_x, n_manual):
 

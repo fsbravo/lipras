@@ -253,7 +253,7 @@ class Experiment(object):
                 self.measured = self.__read_measured(protein, peaks_from_file)
             else:
                 self.measured = self.__generate_measured(
-                    spectra, protein, peak_noise_model, peak_file)
+                    spectra, protein, peak_noise_model)
         else:
             self.measured = None
         if make_spins:
