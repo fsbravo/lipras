@@ -249,7 +249,7 @@ class AssignerSS(Assigner):
                 print '   ...layer {} -> {}'.format(i, i+1)
             layer = self.layers[i]
             for node in layer:
-                o_layer = self.layers[node.residues[-1]+1]
+                o_layer = self.layers[i+1]
                 for o_node in o_layer:
                     score = node.edge_score(o_node)
                     # TODO change to threshold
@@ -384,4 +384,3 @@ class AssignerSS(Assigner):
                  else e.spin_systems[0, :] * np.nan for node in self.path[1:-1]]
         spins = [s.reshape((1, -1)) for s in spins]
         return np.concatenate(spins, axis=0)
-

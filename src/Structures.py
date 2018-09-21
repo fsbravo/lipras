@@ -127,8 +127,6 @@ class Protein(object):
             except KeyError:
                 continue
 
-        self.sequence = res_type
-
     def __correct_via_ppm(self, file):
 
         """
@@ -248,6 +246,7 @@ class Experiment(object):
         self.sequence = protein.sequence
         self.size = protein.size
         self.atoms, self.expected = self.__get_assignable(spectra)
+        self.true_x = self.__get_true_x(protein)
         if make_peaks:
             if peaks_from_file is not None:
                 self.measured = self.__read_measured(protein, peaks_from_file)
@@ -323,6 +322,18 @@ class Experiment(object):
         expected = ExpectedPeaks(data=data)
 
         return atoms, expected
+
+    def __get_true_x(self, protein):
+
+        """
+        Get true x given fixed atom ordering.
+        """
+
+        x = np.zeros(len(self.atoms))
+        for i, (atm_type, res_no) in enumerate(self.atoms):
+            x[i] = protein.residues.loc[res_no, atm_type]
+
+        return x
 
     def __read_measured(self, protein, peaks_from_file):
 

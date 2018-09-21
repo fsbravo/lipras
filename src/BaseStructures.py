@@ -365,13 +365,16 @@ class Assigner(nx.DiGraph):
         self.experiment = experiment
         self.sequence = experiment.sequence
         self.__n__ = experiment.size
+        self.__u__ = None
 
         self.layers = [[] for _ in range(self.__n__)]
 
         self._setup()
         self._create_nodes()
         self._create_edges()
-        self.__u__ = None
+
+        if self.__u__ is None:
+            raise NotImplementedError('__u__ must be given a value!')
 
     def add(self, node):
 
@@ -499,6 +502,7 @@ class Assigner(nx.DiGraph):
         n_edges = len(G.edges())
         x = [model.addVar(obj=self[t[0]][t[1]]['score'], lb=0, ub=max_variable)
              for t in edge_order]
+        model.update()
 
         print '...created binary variable of size {}!'.format(n_edges)
 
@@ -526,8 +530,6 @@ class Assigner(nx.DiGraph):
                     tmp += x[j]
             if tmp is None:
                 print 'tmp is None and something is wrong!!!'
-            else:
-                print 'tmp = ', tmp
             # variable to constrain
             if node.id == self.start.id:
                 model.addConstr(tmp == 1, 'start')
@@ -554,6 +556,8 @@ class Assigner(nx.DiGraph):
         for i, s in enumerate(scores[1:]):
             obj += s * x[i+1]
         model.setObjective(obj, gbp.GRB.MAXIMIZE)
+
+        model.update()
 
         # ### solve
         print '... solving ...'
@@ -627,7 +631,7 @@ class Assigner(nx.DiGraph):
         # utilization constraints
         u_vecs = [np.zeros((1, len(self.u))) for edge in self.edge_order]
         for i, edge in enumerate(self.edge_order):
-            u_vecs[i][edge[1].u] = 1
+            u_vecs[i][0, edge[1].u] = 1
         print u_vecs[0].shape
         u = np.concatenate(u_vecs, axis=0)
         print u.shape
@@ -677,7 +681,7 @@ class Assigner(nx.DiGraph):
         self.path = [nodes[0]] + nodes[2:] + [nodes[1]]
         # self.path = nx.shortest_path(self.solution_path, source=self.start, target=self.end, weight='weight')
 
-    def optimize_ilp(self, G=None):
+    def optimize_ilp(self, G=None, max_utilization=1):
 
         """
         Builds an integer linear program to find a final path within solution graph
@@ -697,11 +701,11 @@ class Assigner(nx.DiGraph):
         # ### variable
         print '...creating variable...'
         n_edges = len(G.edges())
-        x = [model.addVar(obj=self[t[0]][t[1]]['score'], vtype=gbp.GRB.BINARY)
+        x = [model.addVar(vtype=gbp.GRB.BINARY)
              for t in edge_order]
+        model.update()
 
         print '...created binary variable of size {}!'.format(n_edges)
-
 
         # ### constraints
         print '...assembling constraints'
@@ -742,7 +746,7 @@ class Assigner(nx.DiGraph):
                 tmp = x[idx[0]]
                 for j in idx[1:]:
                     tmp += x[j]
-            model.addConstr(tmp <= 1, 'u' + str(i))
+            model.addConstr(tmp <= max_utilization, 'u' + str(i))
 
         # ### objective
         print '...assembling objective'
@@ -751,6 +755,8 @@ class Assigner(nx.DiGraph):
         for i, s in enumerate(scores[1:]):
             obj += s * x[i+1]
         model.setObjective(obj, gbp.GRB.MAXIMIZE)
+
+        model.update()
 
         # ### solve
         print '... solving ...'

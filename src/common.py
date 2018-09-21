@@ -102,7 +102,7 @@ PARAMS = {
     'noise': {'C': 0.16, 'CA': 0.16, 'CB': 0.16, 'N': 0.16, 'H': 0.016},
     'tolerance': {'C': 0.4, 'CA': 0.4, 'CB': 0.4, 'N': 0.4, 'H': 0.03},
     'std': {'C': 0.1, 'CA': 0.1, 'CB': 0.1, 'N': 0.1, 'H': 0.03/4},
-    'threshold': 2.,      # number of acceptable standard deviations for prior
+    'threshold': 4.,      # number of acceptable standard deviations for prior
     'fa_threshold': 3., 
     'half_tol_threshold': 0.3,
     'n_samples': 100
