@@ -56,15 +56,17 @@ class AtomSS(Atom):
 
     def __str__(self):
 
-        return 'Atom({}{} ({}))'.format(self.residue,
+        return 'Atom({}{} ({}), value={})'.format(self.residue,
                                         self.atom_type,
-                                        self.residue_type)
+                                        self.residue_type,
+                                        self.value)
 
     def __repr__(self):
 
-        return 'Atom({}{} ({}))'.format(self.residue,
+        return 'Atom({}{} ({}), value={})'.format(self.residue,
                                         self.atom_type,
-                                        self.residue_type)
+                                        self.residue_type,
+                                        self.value)
 
     @property
     def value(self):

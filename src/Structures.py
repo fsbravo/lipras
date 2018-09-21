@@ -103,9 +103,9 @@ class Protein(object):
         # chemical shifts
         c_shifts = self.bmrb['Assigned_chem_shift_list']['Atom_chem_shift']
         if auth_id is None or auth_id.max() >= seq_id.max():
-            res_no = c_shifts['Seq_ID'].astype('int32').as_matrix()
+            res_no = c_shifts['Seq_ID'].astype('int32').as_matrix() - 1
         else:
-            res_no = c_shifts['Auth_seq_ID'].astype('int32').as_matrix()
+            res_no = c_shifts['Auth_seq_ID'].astype('int32').as_matrix() - 1
         res_type = c_shifts['Comp_ID'].as_matrix()
         atm_type = c_shifts['Atom_ID'].as_matrix()
         values = c_shifts['Val'].astype('float64').as_matrix()
@@ -410,6 +410,7 @@ class Experiment(object):
         """
 
         self.spin_scheme = scheme
+        self.true_spin_matches = []
 
         spins = []
         for i in range(self.size):
@@ -426,6 +427,9 @@ class Experiment(object):
                 cur.append(value)
             if len(cur) == len(scheme):
                 spins.append(np.array(cur))
+                self.true_spin_matches.append(i)
+            else:
+                self.true_spin_matches.append(None)
 
         data = np.array(spins)
 

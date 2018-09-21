@@ -341,6 +341,16 @@ class AtomGroup(OrderedDict):
 
         raise NotImplementedError()
 
+    def __repr__(self):
+
+        return 'AtomGroup(\n\t{})'.format(
+            '\n\t'.join([str(atm) for atm in self.values()]))
+
+    def __str__(self):
+
+        return 'AtomGroup(\n\t{})'.format(
+            '\n\t'.join([str(atm) for atm in self.values()]))
+
 
 ######################################
 # BASE ASSIGNER ######################
