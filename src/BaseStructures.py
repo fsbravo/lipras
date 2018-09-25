@@ -552,7 +552,7 @@ class Assigner(nx.DiGraph):
         print '   ...utilization constraints...'
         u_vecs = [edge[1].u for edge in edge_order]
         for i in self.u:
-            idx = [i for i, u in enumerate(u_vecs) if i in u]
+            idx = [j for j, u in enumerate(u_vecs) if i in u]
             if len(idx) > 0:
                 tmp = x[idx[0]]
                 for j in idx[1:]:
@@ -751,7 +751,7 @@ class Assigner(nx.DiGraph):
         print '   ...utilization constraints...'
         u_vecs = [edge[1].u for edge in edge_order]
         for i in self.u:
-            idx = [i for i, u in enumerate(u_vecs) if i in u]
+            idx = [j for j, u in enumerate(u_vecs) if i in u]
             if len(idx) > 0:
                 tmp = x[idx[0]]
                 for j in idx[1:]:
@@ -778,5 +778,12 @@ class Assigner(nx.DiGraph):
         x_val = np.array([var.x for var in x])
         e_index = np.nonzero(x_val > 0.5)[0]
         edges = [edge_order[i] for i in e_index]
+        u = []
+        for edge in edges:
+            u += edge[1].u
+        u = np.array(u)
+        self.utilization = np.zeros(len(self.u))
+        for i in sorted(self.u):
+            self.utilization[i] = np.sum(u==i)
         self.build_solution_path(edges)
         print '... done!'

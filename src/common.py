@@ -91,8 +91,8 @@ NOISE_PARAMS = {
     'threshold': True
   },
   'IPASS': {
-    'tolerance': {'C': 0.4, 'CA': 0.4, 'CB': 0.4, 'N': 0.4, 'H': 0.04, 'HN': 0.04},
-    'stddev': {'C': 0.4/2.5, 'CA': 0.4/2.5, 'CB': 0.4/2.5, 'N': 0.,
+    'tolerance': {'C': 0.4, 'CA': 0.4, 'CB': 0.2, 'N': 0.4, 'H': 0.04, 'HN': 0.04},
+    'stddev': {'C': 0.4/2.5, 'CA': 0.4/2.5, 'CB': 0.2/2.5, 'N': 0.,
             'H': 0., 'HN': 0.},
     'threshold' : False
   }

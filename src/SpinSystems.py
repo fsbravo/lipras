@@ -13,9 +13,10 @@ class SpinSystem(object):
         if empty:
             self.value *= np.nan
             self.empty = True
+            self.__u__ = []
         else:
             self.empty = False
-        self.__u__ = [i]
+            self.__u__ = [i]
         self.__id__ = i
 
     @property

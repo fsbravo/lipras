@@ -161,7 +161,7 @@ class AtomGroupSS(AtomGroup):
 
     def node_score(self):
 
-        return np.sum([a.node_score() for a in self.values()])
+        return np.sum([a.node_score() for a in self.values() if a.residue==self.residue])
 
     def edge_score(self, other):
 
@@ -359,14 +359,18 @@ class AssignerSS(Assigner):
         Number of correct spin systems in path.
         """
 
-        correct = [self.best_spin_system(true_x, i, threshold)
-                   for i in range(self.n)]
+        if self.experiment.true_spin_matches is None:
+            correct = [self.best_spin_system(true_x, i, threshold)
+                       for i in range(self.n)]
+        else:
+            correct = self.experiment.true_spin_matches
         assigned = [node.spin_id for node in path[1:-1]]
         n_empty = np.sum([node.empty for node in path[1:-1]])
 
-        n_assignable = np.sum(~np.isnan(correct))
+        n_assignable = len([1 for c in correct if c is not None])
         n_assigned = len(assigned) - n_empty
-        n_correct = np.sum(np.array(correct) == np.array(assigned))
+        n_correct = np.sum([spin_id == c if c is not None else 0
+                            for spin_id, c in zip(assigned, correct)])
 
         print '# assignable = {}'.format(n_assignable)
         print '# assigned = {}'.format(n_assigned)

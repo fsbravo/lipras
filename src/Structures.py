@@ -410,7 +410,7 @@ class Experiment(object):
         """
 
         self.spin_scheme = scheme
-        self.true_spin_matches = []
+        spin_matches = []
 
         spins = []
         for i in range(self.size):
@@ -427,11 +427,13 @@ class Experiment(object):
                 cur.append(value)
             if len(cur) == len(scheme):
                 spins.append(np.array(cur))
-                self.true_spin_matches.append(i)
-            else:
-                self.true_spin_matches.append(None)
+                spin_matches.append(i)
 
         data = np.array(spins)
+
+        self.true_spin_matches = [None for _ in range(self.size)]
+        for spin_id, pos in enumerate(spin_matches):
+            self.true_spin_matches[pos] = spin_id
 
         return SpinSystemSet(data, scheme)
 
@@ -442,6 +444,7 @@ class Experiment(object):
         """
 
         self.spin_scheme = scheme
+        self.true_spin_matches = None
 
         spins = []
 
